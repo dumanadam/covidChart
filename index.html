@@ -19,18 +19,55 @@
   </head>
   <body>
     <div class="container">
-      <div class="row d-flex justify-content-center">
-        <h1>Covid Tracker</h1>
+      <div class="row justify-content-center">
+        <h1 class="text-warning" id="header-title"></h1>
+      </div>
+      <div class="row justify-content-center pb-3">
+        <h4 class="text-danger" id="header-subtitle">Getting Latest Data</h4>
+      </div>
+      <div class="col-md-12 text-center pb-5" id="settings">
+        <button type="button" class="btn btn-warning" id="overlay-selection">
+          Show State Overlay
+        </button>
       </div>
       <div class="row">
         <div class="col-lg-6">
-          <canvas id="vic" width="400" height="400"></canvas>
+          <canvas id="vic" width="600" height="450"></canvas>
         </div>
         <div class="col-lg-6">
-          <canvas id="wa" width="400" height="400"></canvas>
+          <canvas id="wa" width="600" height="450"></canvas>
         </div>
       </div>
       <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="">
+        <select class="col-lg-10" size="6" id="months-list"></select>
+      </div>
+
+      <div class="col-lg-2">
+        <h5 id="vic-recovered-text" class="text-warning">
+          Total recovered in Vic:
+        </h5>
+
+        <h5 id="wa-recovered-text" class="text-warning">
+          Total recovered in WA:
+        </h5>
+      </div>
+      <div></div>
+      <div class="col-lg-8">
+        <select size="6" id="raw-list-v" style="width: 100%"></select>
+        <select size="6" id="raw-list-w" style="width: 100%"></select>
+      </div>
+    </div>
+    <div class="row justify-content-center">
+      <p>
+        <small id="footer" class="text-warning"></small>
+      </p>
+    </div>
+    <div class="row justify-content-center">
+      <small id="footer2" class="text-warning"></small>
     </div>
 
     <!-- Optional JavaScript -->

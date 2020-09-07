@@ -1,5 +1,6 @@
 body {
-  background: white !important;
+  background: #0b0c29 !important;
+  color: #fff;
 }
 
 ul {
@@ -17,4 +18,5 @@ body > div > div > div:nth-child(1) > ul > li:nth-child(1) > h1 {
 
 .h1 {
   justify-content: center;
+  color: #fff;
 }
