@@ -1,8 +1,20 @@
+// Text for Chart Title
+let recoveryText = "Victorian Recoveries as of: ";
+
 // variables for storage and filtering
 let rawCSVData,
   rejectedStates,
   chartjsdata = [];
 let csvSplitByMonth = [];
+
+//set colours for chart [low, med, high]
+let chartjsBarColours = [
+  "rgba(0, 255, 21, 0.39)",
+  "rgba(214, 198, 41, 0.39)",
+  "rgba(223, 32, 56, 0.39)",
+];
+let medColour = 499;
+let highColour = 1500;
 
 // Month used for current CSV format to extract date. Adjust if CSV changes
 const minMonthPos = 5;
@@ -47,9 +59,12 @@ Papa.parse(latestCSVUrl, {
     extractRecovered();
 
     chartjsdata.push(csvSplitByMonth[0].vicRecoveredChartData);
+    chartjsdata.push(csvSplitByMonth[0].WARecoveredChartData);
     //console.log(csvSplitByMonth[0].vicRecoveredChartData);
-    console.log("chart", chartjsdata);
-    createChart();
+    //  console.log("chart", chartjsdata);
+    // createChart();
+    displayCharts();
+    console.log(csvSplitByMonth);
   },
 });
 
@@ -109,10 +124,10 @@ function extractRecovered() {
   let monthTotal;
   let accum = 0;
 
-  //loop through each requested state
   states.map((state) => {
-    //begin looping through the months
+    //loop through each requested state
     for (let index = 1; index < calendarMonths.length; index++) {
+      //begin looping through the months
       monthTotal = csvSplitByMonth[index][calendarMonths[index]][state].raw
         .map((day) => {
           let _recoveredTotal = parseInt(day.recovered);
@@ -125,8 +140,8 @@ function extractRecovered() {
       csvSplitByMonth[index][calendarMonths[index]][
         state
       ].recovered = monthTotal;
-      //split each state into its own array
       if (index <= calendarMonths.length + 1 && state == "VIC") {
+        //split each state into its own array
         vicRecoveredChartData.push(monthTotal);
       } else {
         WARecoveredChartData.push(monthTotal);
@@ -137,62 +152,76 @@ function extractRecovered() {
       };
     }
   });
-  // save to the reference Object
-  csvSplitByMonth[0] = yearlyTotals;
+  csvSplitByMonth[0] = yearlyTotals; // save to the reference Object
 }
 
 /* Begin filtering by 
 month */
 
-function print(results) {
-  console.log("asdasd", chartjsdata[0]);
-  return chartjsdata[0];
-}
+function displayCharts(state) {
+  let colours = [];
 
-/* Start creating chart */
-function createChart() {
-  let _months = calendarMonths.splice(1);
-  console.log(_months);
-  console.log("chartjsdata", chartjsdata);
-  var ctx = document.getElementById("myChart").getContext("2d");
-  var myChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: _months,
-      datasets: [
-        {
-          label: "# of REcoveries",
-          data: print(),
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.2)",
-            "rgba(54, 162, 235, 0.2)",
-            "rgba(255, 206, 86, 0.2)",
-            "rgba(75, 192, 192, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
-            "rgba(255, 159, 64, 0.2)",
-          ],
-          borderColor: [
-            "rgba(255, 99, 132, 1)",
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(75, 192, 192, 1)",
-            "rgba(153, 102, 255, 1)",
-            "rgba(255, 159, 64, 1)",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      scales: {
-        yAxes: [
+  states.map((state) => {
+    let currentState = states.findIndex((states) => states === state); //avoid hard coding states
+    recoveryText += " <local time in Victoria>";
+    console.log(state);
+    var ctx = document.getElementById(state.toLowerCase()).getContext("2d");
+    console.log(ctx);
+    let _months = calendarMonths.slice(1);
+    console.log(
+      "asdasdasd>>>",
+      states.findIndex((states) => states === state)
+    );
+
+    chartjsdata[currentState].map((dayRecVal) => {
+      if (dayRecVal < medColour) {
+        colours.push(chartjsBarColours[0]);
+      } else if (dayRecVal >= medColour && dayRecVal <= highColour) {
+        colours.push(chartjsBarColours[1]);
+      } else {
+        colours.push(chartjsBarColours[2]);
+      }
+    });
+    Chart.defaults.global.defaultFontFamily = "Lato";
+    Chart.defaults.global.defaultFontSize = 14;
+    Chart.defaults.global.defaultFontColor = "Red";
+    let vicChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: _months,
+        datasets: [
           {
-            ticks: {
-              beginAtZero: true,
-            },
+            label: recoveryText,
+            data: chartjsdata[currentState],
+            backgroundColor: colours,
+            borderColor: colours,
+            borderWidth: 2,
+            hoverBorderWidth: 4,
+            hoverBorderColor: "#000",
           },
         ],
       },
-    },
+      options: {
+        title: {
+          display: true,
+          text: state + " Recovered",
+          fontSize: 18,
+        },
+        legend: {
+          // position: "right",
+          labels: {
+            fontColor: "#000",
+          },
+          layout: {
+            padding: {
+              right: 500,
+              left: 0,
+              top: 0,
+              bottom: 0,
+            },
+          },
+        },
+      },
+    });
   });
 }
