@@ -8,7 +8,7 @@
 **_Overlay states_**
 [![Talha](https://i.imgur.com/UvsMEQi.png)](https://i.imgur.com/UvsMEQi.png)
 
-[![OPTIONAL OVERLAY](https://i.imgur.com/WbKSoZv.png)]()
+[![OPTIONAL OVERLAY](https://i.imgur.com/WbKSoZv.png)](https://i.imgur.com/WbKSoZv.png)
 
 ## Table of Contents
 
@@ -21,6 +21,8 @@
 ---
 
 ## Information
+
+`Live demo can be seen at` [https://ext.talha.me/covid](https://ext.talha.me/covid)
 
 Libraries used :
 
