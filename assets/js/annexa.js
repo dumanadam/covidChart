@@ -18,6 +18,7 @@ let rawCSVData,
 const minMonthPos = 5;
 const maxMonthPos = 7;
 const states = ["ACT", "VIC"];
+const scrapeStates = ["vicData", "waData"];
 const calendarMonths = [
   "January",
   "February",
@@ -28,9 +29,6 @@ const calendarMonths = [
   "July",
   "August",
   "September",
-  "October",
-  "November",
-  "December",
 ];
 let latestCSVUrl =
   "https://raw.githubusercontent.com/M3IT/COVID-19_Data/master/Data/COVID_AU_state_daily_change.csv";
@@ -50,13 +48,13 @@ const csvData = Papa.parse(latestCSVUrl, {
     rawCSVData = results.data;
     console.log(rawCSVData);
     createCSVObject();
-    extractRecovered("VIC", 1);
+    extractRecovered();
   },
 });
 
 /* 
 Create the base object so filtered data can be stored. Function extracts the date string from the csv parsing and comparing to calendarMonths. 
-This then creates the csvSplitByMonth object which is filled with filtered data.
+This then creates the csvSplitByMonth object which is filled with filtered data. Get Vic and WA data extracted at the same time calling extractMonthly method. 
 */
 
 function createCSVObject(results) {
@@ -93,11 +91,8 @@ This then creates the csvSplitByMonth object which is used to display data.
 function extractMonthly(state, month) {
   let _monthCheck;
 
-  if (month == 0) {
-    month = 1;
-  } else {
-    month += 1;
-  }
+  //due to array indexing adjust to match months
+  month = month == 0 ? (month = 1) : (month += 1);
 
   _monthCheck = rawCSVData.filter((day) => {
     if (
@@ -113,43 +108,29 @@ function extractMonthly(state, month) {
 /* 
 
 */
-function extractRecovered(state, month) {
-  let _recoverdTtoal = [];
-  let accumulator = 0;
-  if (month == 0) {
-    month = 1;
-  } else {
-    month += 1;
-  }
-
-  /*   console.log("sd", csvSplitByMonth[0][calendarMonths[0]].vicData);
-  let tots = csvSplitByMonth[8][calendarMonths[8]].vicData.map((day) => {
-    console.log(day);
-    _recoverdTtoal.push(day.recovered);
-  }); */
-  let totss = csvSplitByMonth[6][calendarMonths[6]].vicData.reduce(
-    (accumulator, currentValue) => {
-      console.log("currentValue", parseInt(currentValue.recovered));
-      let num = parseInt(currentValue.recovered);
-      _recoverdTtoal.push(num);
-      return (accumulator += num);
+function extractRecovered() {
+  scrapeStates.map((state) => {
+    for (let index = 1; index < calendarMonths.length; index++) {
+      let monthTotal = csvSplitByMonth[index][calendarMonths[index]][state]
+        .map((day) => {
+          let _recoveredTotal = parseInt(day.recovered);
+          console.log("num", num);
+          return _recoveredTotal;
+        })
+        .reduce((accum, recovered) => {
+          return accum + recovered;
+        });
+      console.log("tots:", monthTotal);
+      csvSplitByMonth[index][
+        calendarMonths[index]
+      ].recoveredTotalVIC = monthTotal;
+      console.log(
+        (csvSplitByMonth[index][
+          calendarMonths[index]
+        ].recoveredTotalVIC = monthTotal)
+      );
     }
-  );
-  _recoverdTtoal = _recoverdTtoal.reduce((accumulator, currentValue) => {
-    return (accumulator += currentValue);
   });
-  console.log("totss", totss);
-  console.log(_recoverdTtoal);
-  /* csvSplitByMonth[index] = {
-    [calendarMonths[index]]: {
-      vicData: extractMonthly("VIC", index),
-      waData: extractMonthly("WA", index),
-      recoveredTotalWA: extractRecovered("VIC", index),
-      recoveredTotalVIC: undefined,
-
-      otherStates: rejectedStates,
-    },
-  }; */
 }
 
 /* 
