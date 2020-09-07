@@ -17,7 +17,7 @@ let rawCSVData,
 
 const minMonthPos = 5;
 const maxMonthPos = 7;
-const states = ["ACT", "VIC"];
+const states = ["WA", "VIC"];
 const scrapeStates = ["vicData", "waData"];
 const calendarMonths = [
   "January",
@@ -61,11 +61,14 @@ function createCSVObject(results) {
   for (let index = 0; index < calendarMonths.length; index++) {
     csvSplitByMonth[index] = {
       [calendarMonths[index]]: {
-        vicData: extractMonthly("VIC", index),
-        waData: extractMonthly("WA", index),
-        recoveredTotalWA: undefined,
-        recoveredTotalVIC: undefined,
-
+        VIC: {
+          raw: extractMonthly("VIC", index),
+          recovered: undefined,
+        },
+        WA: {
+          raw: extractMonthly("WA", index),
+          recovered: undefined,
+        },
         otherStates: rejectedStates,
       },
     };
@@ -109,28 +112,27 @@ function extractMonthly(state, month) {
 
 */
 function extractRecovered() {
-  scrapeStates.map((state) => {
+  // let index = 5;
+  // console.log(csvSplitByMonth[index][calendarMonths[index]][states[1]].raw);
+
+  states.map((state) => {
     for (let index = 1; index < calendarMonths.length; index++) {
-      let monthTotal = csvSplitByMonth[index][calendarMonths[index]][state]
+      let monthTotal = csvSplitByMonth[index][calendarMonths[index]][state].raw
         .map((day) => {
           let _recoveredTotal = parseInt(day.recovered);
-          console.log("num", num);
+          console.log("num", _recoveredTotal);
           return _recoveredTotal;
         })
         .reduce((accum, recovered) => {
           return accum + recovered;
         });
       console.log("tots:", monthTotal);
-      csvSplitByMonth[index][
-        calendarMonths[index]
-      ].recoveredTotalVIC = monthTotal;
-      console.log(
-        (csvSplitByMonth[index][
-          calendarMonths[index]
-        ].recoveredTotalVIC = monthTotal)
-      );
+      csvSplitByMonth[index][calendarMonths[index]][
+        state
+      ].recovered = monthTotal;
     }
   });
+  console.log(csvSplitByMonth);
 }
 
 /* 
