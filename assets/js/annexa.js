@@ -1,25 +1,19 @@
-/* 
-Format of dataObject
-{
-  recoveredTotalWA: undefined,
-  recoveredTotalVIC: undefined,
-  vicData: undefined,
-  waData: undefined,
-  otherStates: undefined,
-}
-
-
-*/
-
+// variables for storage and filtering
 let rawCSVData,
   rejectedStates,
-  csvSplitByMonth = [];
+  chartjsdata = [];
+let csvSplitByMonth = [];
 
+// Month used for current CSV format to extract date. Adjust if CSV changes
 const minMonthPos = 5;
 const maxMonthPos = 7;
-const states = ["WA", "VIC"];
-const scrapeStates = ["vicData", "waData"];
+
+//States to be charted
+const states = ["VIC", "WA"];
+
+//Reference months, [0] left empty to line up with calender month equivalent Jan == 1
 const calendarMonths = [
+  "",
   "January",
   "February",
   "March",
@@ -30,6 +24,8 @@ const calendarMonths = [
   "August",
   "September",
 ];
+
+//Update URL as required
 let latestCSVUrl =
   "https://raw.githubusercontent.com/M3IT/COVID-19_Data/master/Data/COVID_AU_state_daily_change.csv";
 
@@ -41,24 +37,30 @@ Convert to an array and  save it to rawCSVData.
 Once saved, continue with extracting and filtering.
 */
 
-const csvData = Papa.parse(latestCSVUrl, {
+Papa.parse(latestCSVUrl, {
   header: true,
   download: true,
   complete: function (results) {
     rawCSVData = results.data;
-    console.log(rawCSVData);
+    //console.log(rawCSVData);
     createCSVObject();
     extractRecovered();
+
+    chartjsdata.push(csvSplitByMonth[0].vicRecoveredChartData);
+    //console.log(csvSplitByMonth[0].vicRecoveredChartData);
+    console.log("chart", chartjsdata);
+    createChart();
   },
 });
 
 /* 
-Create the base object so filtered data can be stored. Function extracts the date string from the csv parsing and comparing to calendarMonths. 
-This then creates the csvSplitByMonth object which is filled with filtered data. Get Vic and WA data extracted at the same time calling extractMonthly method. 
+Create the base object so filtered data can be stored. Function extracts the date string from the csv parsing and comparing it to calendarMonths array. 
+This then creates the csvSplitByMonth object which is filled with filtered data.extractyMonthly is called to split object into months\state\days\recovered. 
 */
 
 function createCSVObject(results) {
-  for (let index = 0; index < calendarMonths.length; index++) {
+  csvSplitByMonth[0] = { recovered: undefined };
+  for (let index = 1; index <= calendarMonths.length; index++) {
     csvSplitByMonth[index] = {
       [calendarMonths[index]]: {
         VIC: {
@@ -73,29 +75,16 @@ function createCSVObject(results) {
       },
     };
   }
-  /*  for (months in calendarMonths) {
-    csvSplitByMonth[months] = {
-      [calendarMonths[months]]: {
-        recoveredTotalWA: undefined,
-        recoveredTotalVIC: undefined,
-        vicData: extractMonthly("VIC", months),
-        waData: undefined,
-        otherStates: undefined,
-      },
-    };
-  } */
-  console.log(csvSplitByMonth);
 }
 
 /* 
-Create the base object so filtered data can be stored. Function extracts the date string from the csv parsing and comparing to calendarMonths. 
-This then creates the csvSplitByMonth object which is used to display data.
+As createCSVObject creates the template reference object, this method is called to go through each month 
+(passed as variable from createCSVObject) and compare it to each entry. If the month and state match,
+then it is filtered into _monthcheck and returned to the reference object to be saved.
 */
+
 function extractMonthly(state, month) {
   let _monthCheck;
-
-  //due to array indexing adjust to match months
-  month = month == 0 ? (month = 1) : (month += 1);
 
   _monthCheck = rawCSVData.filter((day) => {
     if (
@@ -105,107 +94,105 @@ function extractMonthly(state, month) {
       return day;
     }
   });
+
   return _monthCheck;
 }
 
 /* 
-
+Once each day has been filtered into the correct month and state in the reference object, this method is called 
+to loop through the [states] and then loop through the months in the CSV. Recovered totals are filtered, reduced and sent back to the refernce object
 */
 function extractRecovered() {
-  // let index = 5;
-  // console.log(csvSplitByMonth[index][calendarMonths[index]][states[1]].raw);
+  let vicRecoveredChartData = [];
+  let WARecoveredChartData = [];
+  let yearlytotals;
+  let monthTotal;
+  let accum = 0;
 
+  //loop through each requested state
   states.map((state) => {
+    //begin looping through the months
     for (let index = 1; index < calendarMonths.length; index++) {
-      let monthTotal = csvSplitByMonth[index][calendarMonths[index]][state].raw
+      monthTotal = csvSplitByMonth[index][calendarMonths[index]][state].raw
         .map((day) => {
           let _recoveredTotal = parseInt(day.recovered);
-          console.log("num", _recoveredTotal);
           return _recoveredTotal;
         })
         .reduce((accum, recovered) => {
           return accum + recovered;
         });
-      console.log("tots:", monthTotal);
+
       csvSplitByMonth[index][calendarMonths[index]][
         state
       ].recovered = monthTotal;
+      //split each state into its own array
+      if (index <= calendarMonths.length + 1 && state == "VIC") {
+        vicRecoveredChartData.push(monthTotal);
+      } else {
+        WARecoveredChartData.push(monthTotal);
+      }
+      yearlyTotals = {
+        vicRecoveredChartData,
+        WARecoveredChartData,
+      };
     }
   });
-  console.log(csvSplitByMonth);
-}
-
-/* 
-Split data by month so its easier to filter.  Can also save on processing time 
-by reducing filtering the data multiple times . 
-*/
-function convertToDate(unixTimestamp) {
-  const milliseconds = unixTimestamp * 1000; // use in next step
-
-  const dateObject = new Date(milliseconds);
-
-  const humanDateFormat = dateObject.toLocaleString(); //2019-12-9 10:30:15
-
-  /* dateObject.toLocaleString("en-US", { weekday: "long" }); // Monday
-  dateObject.toLocaleString("en-US", { month: "long" }); // December
-  dateObject.toLocaleString("en-US", { day: "numeric" }); // 9
-  dateObject.toLocaleString("en-US", { year: "numeric" }); // 2019
-  dateObject.toLocaleString("en-US", { hour: "numeric" }); // 10 AM
-  dateObject.toLocaleString("en-US", { minute: "numeric" }); // 30
-  dateObject.toLocaleString("en-US", { second: "numeric" }); // 15
-  dateObject.toLocaleString("en-US", { timeZoneName: "short" }); // 12/9/2019, 10:30:15 AM CST */
-  return humanDateFormat;
+  // save to the reference Object
+  csvSplitByMonth[0] = yearlyTotals;
 }
 
 /* Begin filtering by 
 month */
 
-function findMaxMonth(results) {
-  console.log(results);
-  // let csvStateSplit = results.map((x) => x);
-  // console.log(csvStateSplit);
+function print(results) {
+  console.log("asdasd", chartjsdata[0]);
+  return chartjsdata[0];
 }
 
 /* Start creating chart */
-
-var ctx = document.getElementById("myChart").getContext("2d");
-var myChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-    labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-    datasets: [
-      {
-        label: "# of Votes",
-        data: [12, 19, 3, 5, 2, 3],
-        backgroundColor: [
-          "rgba(255, 99, 132, 0.2)",
-          "rgba(54, 162, 235, 0.2)",
-          "rgba(255, 206, 86, 0.2)",
-          "rgba(75, 192, 192, 0.2)",
-          "rgba(153, 102, 255, 0.2)",
-          "rgba(255, 159, 64, 0.2)",
-        ],
-        borderColor: [
-          "rgba(255, 99, 132, 1)",
-          "rgba(54, 162, 235, 1)",
-          "rgba(255, 206, 86, 1)",
-          "rgba(75, 192, 192, 1)",
-          "rgba(153, 102, 255, 1)",
-          "rgba(255, 159, 64, 1)",
-        ],
-        borderWidth: 1,
-      },
-    ],
-  },
-  options: {
-    scales: {
-      yAxes: [
+function createChart() {
+  let _months = calendarMonths.splice(1);
+  console.log(_months);
+  console.log("chartjsdata", chartjsdata);
+  var ctx = document.getElementById("myChart").getContext("2d");
+  var myChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: _months,
+      datasets: [
         {
-          ticks: {
-            beginAtZero: true,
-          },
+          label: "# of REcoveries",
+          data: print(),
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+            "rgba(255, 206, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(153, 102, 255, 0.2)",
+            "rgba(255, 159, 64, 0.2)",
+          ],
+          borderColor: [
+            "rgba(255, 99, 132, 1)",
+            "rgba(54, 162, 235, 1)",
+            "rgba(255, 206, 86, 1)",
+            "rgba(75, 192, 192, 1)",
+            "rgba(153, 102, 255, 1)",
+            "rgba(255, 159, 64, 1)",
+          ],
+          borderWidth: 1,
         },
       ],
     },
-  },
-});
+    options: {
+      scales: {
+        yAxes: [
+          {
+            ticks: {
+              beginAtZero: true,
+            },
+          },
+        ],
+      },
+    },
+  });
+}
