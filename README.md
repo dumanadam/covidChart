@@ -24,6 +24,8 @@
 
 `Live demo can be seen at` [https://ext.talha.me/covid](https://ext.talha.me/covid)
 
+`Tested om Firefox and Chrome`
+
 Libraries used :
 
 - Papa Parse for CSV parsing > https://www.papaparse.com/
